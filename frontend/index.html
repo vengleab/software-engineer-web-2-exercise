@@ -2,25 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lecturer Task Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 p-10">
-    <div class="max-w-md mx-auto bg-white p-6 rounded-xl shadow-md">
-        <h1 class="text-2xl font-bold mb-4">📚 Course Tasks</h1>
-
-        <div id="errorBox" class="hidden mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm"></div>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 sm:p-10 font-sans">
+    <div class="max-w-md mx-auto bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-xl space-y-6">
         
-        <div class="mb-6">
+        <!-- Header & Server Port Info -->
+        <div class="flex items-center justify-between border-b border-slate-700 pb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-white">📚 Course Tasks</h1>
+                <p class="text-xs text-slate-400 mt-0.5">PM2 Backend Request Tracker</p>
+            </div>
+            <!-- Display Requested Server Port -->
+            <div class="bg-slate-900 border border-indigo-500/30 px-3 py-2 rounded-xl text-right">
+                <span class="text-[10px] uppercase tracking-wider text-slate-400 block font-medium">Server Port</span>
+                <span id="serverPortDisplay" class="text-lg font-mono font-bold text-emerald-400">Loading...</span>
+            </div>
+        </div>
+
+        <div id="errorBox" class="hidden p-3 bg-red-900/50 border border-red-500 text-red-200 rounded-xl text-sm"></div>
+        
+        <div class="space-y-3">
             <input id="taskInput" type="text" placeholder="New task (e.g. Grade ASB2 assignments)" 
-                   class="border p-2 w-full rounded mb-2">
-            <button onclick="addTask()" class="bg-blue-600 text-white px-4 py-2 rounded w-full hover:bg-blue-700">
+                   class="border border-slate-600 bg-slate-900 text-white p-3 w-full rounded-xl focus:outline-none focus:border-indigo-500 placeholder-slate-500 text-sm">
+            <button onclick="addTask()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl font-semibold w-full transition shadow-lg shadow-indigo-600/30 text-sm">
                 Add Task
             </button>
         </div>
 
         <ul id="taskList" class="space-y-2">
-            </ul>
+        </ul>
+
     </div>
 
     <script>
@@ -36,12 +50,29 @@
             errorBox.classList.add('hidden');
         }
 
+        function updatePortDisplay(port) {
+            const el = document.getElementById('serverPortDisplay');
+            if (port) {
+                el.textContent = `Port: ${port}`;
+                el.className = "text-lg font-mono font-bold text-emerald-400";
+            } else {
+                el.textContent = "Port: N/A";
+                el.className = "text-lg font-mono font-bold text-amber-400";
+            }
+        }
+
         async function loadTasks() {
             clearError();
             try {
                 const response = await fetch('/api/tasks');
                 if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-                const tasks = await response.json();
+                const data = await response.json();
+                
+                const tasks = Array.isArray(data) ? data : (data.tasks || []);
+                if (data.port) {
+                    updatePortDisplay(data.port);
+                }
+                
                 document.getElementById('taskList').innerHTML = '';
                 tasks.forEach(task => renderTask(task));
             } catch (error) {
@@ -64,9 +95,9 @@
 
         function renderTask(taskText) {
             const li = document.createElement('li');
-            li.className = "flex justify-between items-center bg-slate-100 p-3 rounded border-l-4 border-blue-500";
-            li.innerHTML = `<span>${taskText}</span> 
-                            <button onclick="removeTask(this)" class="text-red-500 text-sm">Done</button>`;
+            li.className = "flex justify-between items-center bg-slate-900/80 p-3 rounded-xl border-l-4 border-indigo-500 border-t border-r border-b border-slate-700/60 shadow-sm text-sm";
+            li.innerHTML = `<span class="text-slate-100 font-medium">${taskText}</span> 
+                            <button onclick="removeTask(this)" class="text-red-400 hover:text-red-300 text-xs font-medium px-2 py-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition">Done</button>`;
             document.getElementById('taskList').appendChild(li);
         }
 
@@ -80,7 +111,10 @@
             const updatedTasks = [...currentTasks, text];
 
             try {
-                await saveTasks(updatedTasks);
+                const result = await saveTasks(updatedTasks);
+                if (result && result.port) {
+                    updatePortDisplay(result.port);
+                }
                 renderTask(text);
                 input.value = '';
             } catch (error) {
@@ -102,7 +136,10 @@
             updatedTasks.splice(index, 1);
 
             try {
-                await saveTasks(updatedTasks);
+                const result = await saveTasks(updatedTasks);
+                if (result && result.port) {
+                    updatePortDisplay(result.port);
+                }
                 li.remove();
             } catch (error) {
                 console.error("Backend error: Record not removed.", error);
