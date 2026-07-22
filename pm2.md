@@ -1,6 +1,6 @@
 # PM2 Management Guide
 
-This document explains how to run, monitor, and stop the 3 backend services using **PM2** process manager.
+This document explains how to run, monitor, and stop the 3 backend services using **PM2** process manager, and configure Nginx upstream load balancing.
 
 ---
 
@@ -8,17 +8,13 @@ This document explains how to run, monitor, and stop the 3 backend services usin
 
 ### 1. Start Services
 
-To start all 3 backend services (running on ports **3001**, **3002**, and **3003**):
+To start all 3 backend services (running on ports **3000**, **3001**, and **3002**):
 
-```bash
-# Using PM2 directly from root directory
-pm2 start ecosystem.config.js
-```
-
-Or using `npm` from the `backend` directory:
 ```bash
 cd backend
 npm run pm2:start
+# OR
+pm2 start ecosystem.config.js
 ```
 
 ---
@@ -28,17 +24,10 @@ npm run pm2:start
 To stop all running services:
 
 ```bash
-# Stop all services configured in ecosystem.config.js
-pm2 stop ecosystem.config.js
-
-# Or stop all PM2 processes
-pm2 stop all
-```
-
-Or using `npm` from the `backend` directory:
-```bash
 cd backend
 npm run pm2:stop
+# OR
+pm2 stop ecosystem.config.js
 ```
 
 ---
@@ -46,67 +35,51 @@ npm run pm2:stop
 ## 📊 Status & Monitoring
 
 ### Check Process Status
-To list all active PM2 services and their status (online, CPU, memory):
-```bash
-pm2 status
-# OR
-pm2 list
-```
-
-Or via npm:
 ```bash
 cd backend
 npm run pm2:status
+# OR
+pm2 status
 ```
 
 ### View Real-Time Logs
-To view real-time logs for all services:
 ```bash
 pm2 logs
 ```
 
-To view logs for a specific service (e.g. port 3001):
-```bash
-pm2 logs backend-service-3001
-```
+---
 
-To flush/clear log files:
-```bash
-pm2 flush
-```
+## ⚙️ Configuration File
+
+The single PM2 ecosystem configuration is located in the backend directory:
+- [`backend/ecosystem.config.js`](./backend/ecosystem.config.js)
 
 ---
 
-## 🔄 Restart & Delete Services
+## 🌐 Nginx Upstream Configuration
 
-### Restart Services
-To restart all 3 services:
-```bash
-pm2 restart ecosystem.config.js
+Add the 3 PM2 backend ports (**3000**, **3001**, **3002**) to your Nginx configuration (`/etc/nginx/sites-available/web2-exercise.conf`):
+
+```nginx
+upstream pm2_backend_cluster {
+    server 127.0.0.1:3000;
+    server 127.0.0.1:3001;
+    server 127.0.0.1:3002;
+}
+
+server {
+    listen 82;
+
+    root /var/www/html/web-se/frontend;
+    index index.html;
+
+    location /api {
+        proxy_pass http://pm2_backend_cluster;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
 ```
-
-Or using npm:
-```bash
-cd backend
-npm run pm2:restart
-```
-
-### Delete / Remove Services from PM2 List
-To stop and remove the processes from PM2:
-```bash
-pm2 delete ecosystem.config.js
-# OR
-pm2 delete all
-```
-
----
-
-## ⚙️ Configuration Details
-
-The PM2 ecosystem file is located at [`ecosystem.config.js`](./ecosystem.config.js):
-
-- **backend-service-3001**: Running on `http://localhost:3001`
-- **backend-service-3002**: Running on `http://localhost:3002`
-- **backend-service-3003**: Running on `http://localhost:3003`
-
-Each backend instance serves the API endpoint `/api/port` which returns the specific server port executing the request.
