@@ -8,6 +8,8 @@
 <body class="bg-slate-50 p-10">
     <div class="max-w-md mx-auto bg-white p-6 rounded-xl shadow-md">
         <h1 class="text-2xl font-bold mb-4">📚 Course Tasks</h1>
+
+        <div id="errorBox" class="hidden mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm"></div>
         
         <div class="mb-6">
             <input id="taskInput" type="text" placeholder="New task (e.g. Grade ASB2 assignments)" 
@@ -22,55 +24,90 @@
     </div>
 
     <script>
-        let localTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+        function showError(msg) {
+            const errorBox = document.getElementById('errorBox');
+            errorBox.textContent = msg;
+            errorBox.classList.remove('hidden');
+        }
+
+        function clearError() {
+            const errorBox = document.getElementById('errorBox');
+            errorBox.textContent = '';
+            errorBox.classList.add('hidden');
+        }
 
         async function loadTasks() {
+            clearError();
             try {
                 const response = await fetch('/api/tasks');
-                if (!response.ok) throw new Error('Failed to fetch from backend');
+                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
                 const tasks = await response.json();
                 document.getElementById('taskList').innerHTML = '';
                 tasks.forEach(task => renderTask(task));
-                localTasks = tasks;
-                localStorage.setItem('tasks', JSON.stringify(localTasks));
             } catch (error) {
-                console.error("Error loading tasks, falling back to local storage:", error);
-                document.getElementById('taskList').innerHTML = '';
-                localTasks.forEach(task => renderTask(task));
+                console.error("Error loading tasks:", error);
+                showError("Failed to load tasks from backend.");
             }
         }
 
-        async function saveTasks() {
-            const taskElements = document.querySelectorAll('#taskList span');
-            const tasks = Array.from(taskElements).map(el => el.textContent);
-            localTasks = tasks;
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-
-            try {
-                await fetch('/api/tasks', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tasks })
-                });
-            } catch (error) {
-                console.error("Error saving tasks to backend:", error);
+        async function saveTasks(tasks) {
+            const response = await fetch('/api/tasks', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tasks })
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}`);
             }
+            return await response.json();
         }
 
         function renderTask(taskText) {
             const li = document.createElement('li');
             li.className = "flex justify-between items-center bg-slate-100 p-3 rounded border-l-4 border-blue-500";
             li.innerHTML = `<span>${taskText}</span> 
-                            <button onclick="this.parentElement.remove(); saveTasks()" class="text-red-500 text-sm">Done</button>`;
+                            <button onclick="removeTask(this)" class="text-red-500 text-sm">Done</button>`;
             document.getElementById('taskList').appendChild(li);
         }
 
-        function addTask() {
+        async function addTask() {
+            clearError();
             const input = document.getElementById('taskInput');
-            if (!input.value) return;
-            renderTask(input.value);
-            saveTasks();
-            input.value = '';
+            const text = input.value.trim();
+            if (!text) return;
+
+            const currentTasks = Array.from(document.querySelectorAll('#taskList span')).map(el => el.textContent);
+            const updatedTasks = [...currentTasks, text];
+
+            try {
+                await saveTasks(updatedTasks);
+                renderTask(text);
+                input.value = '';
+            } catch (error) {
+                console.error("Backend error: Record not added.", error);
+                showError("Failed to add task: Backend server error or unreachable.");
+            }
+        }
+
+        async function removeTask(button) {
+            clearError();
+            const li = button.parentElement;
+            const currentTasks = Array.from(document.querySelectorAll('#taskList span')).map(el => el.textContent);
+            const taskText = li.querySelector('span').textContent;
+            
+            const index = currentTasks.indexOf(taskText);
+            if (index === -1) return;
+
+            const updatedTasks = [...currentTasks];
+            updatedTasks.splice(index, 1);
+
+            try {
+                await saveTasks(updatedTasks);
+                li.remove();
+            } catch (error) {
+                console.error("Backend error: Record not removed.", error);
+                showError("Failed to remove task: Backend server error or unreachable.");
+            }
         }
 
         document.addEventListener('DOMContentLoaded', loadTasks);
