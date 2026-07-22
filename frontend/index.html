@@ -22,20 +22,30 @@
     </div>
 
     <script>
+        let localTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+
         async function loadTasks() {
             try {
                 const response = await fetch('/api/tasks');
+                if (!response.ok) throw new Error('Failed to fetch from backend');
                 const tasks = await response.json();
                 document.getElementById('taskList').innerHTML = '';
                 tasks.forEach(task => renderTask(task));
+                localTasks = tasks;
+                localStorage.setItem('tasks', JSON.stringify(localTasks));
             } catch (error) {
-                console.error("Error loading tasks:", error);
+                console.error("Error loading tasks, falling back to local storage:", error);
+                document.getElementById('taskList').innerHTML = '';
+                localTasks.forEach(task => renderTask(task));
             }
         }
 
         async function saveTasks() {
             const taskElements = document.querySelectorAll('#taskList span');
             const tasks = Array.from(taskElements).map(el => el.textContent);
+            localTasks = tasks;
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+
             try {
                 await fetch('/api/tasks', {
                     method: 'PUT',
@@ -43,7 +53,7 @@
                     body: JSON.stringify({ tasks })
                 });
             } catch (error) {
-                console.error("Error saving tasks:", error);
+                console.error("Error saving tasks to backend:", error);
             }
         }
 
