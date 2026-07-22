@@ -15,9 +15,9 @@
                 <h1 class="text-2xl font-bold text-white">📚 Course Tasks</h1>
                 <p class="text-xs text-slate-400 mt-0.5">PM2 Backend Request Tracker</p>
             </div>
-            <!-- Display Requested Server Port -->
+            <!-- Display Requested Server Name -->
             <div class="bg-slate-900 border border-indigo-500/30 px-3 py-2 rounded-xl text-right">
-                <span class="text-[10px] uppercase tracking-wider text-slate-400 block font-medium">Server Port</span>
+                <span class="text-[10px] uppercase tracking-wider text-slate-400 block font-medium">Server Name</span>
                 <span id="serverPortDisplay" class="text-lg font-mono font-bold text-emerald-400">Loading...</span>
             </div>
         </div>
@@ -51,13 +51,13 @@
             errorBox.classList.add('hidden');
         }
 
-        function updatePortDisplay(port) {
+        function updateServerDisplay(serverName) {
             const el = document.getElementById('serverPortDisplay');
-            if (port) {
-                el.textContent = `Port: ${port}`;
+            if (serverName) {
+                el.textContent = serverName;
                 el.className = "text-lg font-mono font-bold text-emerald-400";
             } else {
-                el.textContent = "Port: N/A";
+                el.textContent = "Unavailable";
                 el.className = "text-lg font-mono font-bold text-amber-400";
             }
         }
@@ -70,8 +70,8 @@
                 const data = await response.json();
                 
                 const tasks = Array.isArray(data) ? data : (data.tasks || []);
-                if (data.port) {
-                    updatePortDisplay(data.port);
+                if (data.serverName) {
+                    updateServerDisplay(data.serverName);
                 }
                 
                 document.getElementById('taskList').innerHTML = '';
@@ -113,8 +113,8 @@
 
             try {
                 const result = await saveTasks(updatedTasks);
-                if (result && result.port) {
-                    updatePortDisplay(result.port);
+                if (result && result.serverName) {
+                    updateServerDisplay(result.serverName);
                 }
                 renderTask(text);
                 input.value = '';
@@ -138,8 +138,8 @@
 
             try {
                 const result = await saveTasks(updatedTasks);
-                if (result && result.port) {
-                    updatePortDisplay(result.port);
+                if (result && result.serverName) {
+                    updateServerDisplay(result.serverName);
                 }
                 li.remove();
             } catch (error) {
