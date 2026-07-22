@@ -24,13 +24,14 @@
 
         <div id="errorBox" class="hidden p-3 bg-red-900/50 border border-red-500 text-red-200 rounded-xl text-sm"></div>
         
-        <div class="space-y-3">
+        <form onsubmit="event.preventDefault(); addTask();" class="space-y-3">
             <input id="taskInput" type="text" placeholder="New task (e.g. Grade ASB2 assignments)" 
+                   onkeydown="if(event.key === 'Enter') { event.preventDefault(); addTask(); }"
                    class="border border-slate-600 bg-slate-900 text-white p-3 w-full rounded-xl focus:outline-none focus:border-indigo-500 placeholder-slate-500 text-sm">
-            <button onclick="addTask()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl font-semibold w-full transition shadow-lg shadow-indigo-600/30 text-sm">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl font-semibold w-full transition shadow-lg shadow-indigo-600/30 text-sm">
                 Add Task
             </button>
-        </div>
+        </form>
 
         <ul id="taskList" class="space-y-2">
         </ul>
