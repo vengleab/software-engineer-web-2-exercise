@@ -3,7 +3,7 @@
 Configure Nginx to serve the frontend and proxy API requests to the backend:
 
 1. Serve the frontend static files on `http://localhost:82`.
-   - The frontend files are located at `/home/ubuntu/Desktop/openclaw-demo/frontend`.
+   - The frontend files are located at `./frontend`.
 2. Reverse proxy requests from `http://localhost:82/api` to the backend.
    - The backend runs on `http://localhost:3000`.
 
