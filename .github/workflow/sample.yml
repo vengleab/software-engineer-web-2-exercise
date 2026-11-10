@@ -1,0 +1,14 @@
+name: CICD Sample Action
+on:
+  push:
+    branches: [workflow-example]
+
+jobs:
+  sample-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: List files in the repository
+        run: ls -ls
+
+      - name: View frontend code
+        run: cat frontend/index.html
