@@ -5,6 +5,9 @@ on:
 
 jobs:
   sample-job:
+    environment: vm_server
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_SECRET }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -13,5 +16,7 @@ jobs:
       - name: List files in the repository
         run: ls -ls
 
-      - name: View frontend code
-        run: cat frontend/index.html
+      - name: Deploy frontend to WebSever
+        run: |
+          cat $SSH_PRIVATE_KEY > private_key.pem
+          scp -i private_key.pem -P 15766 frontend/* ubuntu@0.tcp.ap.ngrok.io:/var/www/html
