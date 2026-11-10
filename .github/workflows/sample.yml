@@ -20,4 +20,4 @@ jobs:
         run: |
           printf '%s\n'  $SSH_PRIVATE_KEY > private_key.pem
           chmod 600 private_key.pem
-          scp -i private_key.pem -P 15766 frontend/* ubuntu@0.tcp.ap.ngrok.io:/var/www/html
+          scp -o StrictHostKeyChecking=no -i private_key.pem -P 15766 frontend/* ubuntu@0.tcp.ap.ngrok.io:/var/www/html
