@@ -18,6 +18,6 @@ jobs:
 
       - name: Deploy frontend to WebSever
         run: |
-          echo $SSH_PRIVATE_KEY > tr -d '\r' > private_key.pem
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > private_key.pem
           chmod 600 private_key.pem
           scp -o StrictHostKeyChecking=no -i private_key.pem -P 24267 frontend/* ubuntu@0.tcp.ap.ngrok.io:/var/www/html
