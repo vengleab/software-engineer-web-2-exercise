@@ -9,6 +9,8 @@ jobs:
     env:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_SECRET }}
       SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ vars.SSH_USER }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -21,4 +23,4 @@ jobs:
         run: |
           echo "$SSH_PRIVATE_KEY" | tr -d '\r' > private_key.pem
           chmod 600 private_key.pem
-          scp -o StrictHostKeyChecking=no -i private_key.pem -P $SSH_PORT frontend/* ubuntu@0.tcp.ap.ngrok.io:/var/www/html
+          scp -o StrictHostKeyChecking=no -i private_key.pem -P $SSH_PORT frontend/* $SSH_USER@$SSH_HOST:/var/www/html
